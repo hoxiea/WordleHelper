@@ -17,3 +17,5 @@
 pom.xml
 pom.xml.asc
 profiles.clj
+.DS_Store
+.clj-kondo/.cache/
