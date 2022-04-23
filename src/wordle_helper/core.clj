@@ -3,11 +3,10 @@
   (:gen-class)
   (:require [clojure.string :as str]
             [wordle-helper.guess-and-feedback :as gaf]
+            [wordle-helper.helpers :as util]
             [wordle-helper.wordlist :as wordlist]))
 
-(def wordle-num-guesses 6)
-
-(def main-choices 
+(def main-choices
   {:s "Print current status"
    :g "Enter your next guess"
    :w "List all possible words"
@@ -17,7 +16,7 @@
    :q "Quit Wordle Helper"})
 
 (defn get-user-choice
-  "Get a valid main choice from the user."
+  "Get a valid choice from the map of choices via *in*."
   [choices]
   (let [valid-options (set (map name (keys choices)))]
     (loop []
@@ -25,20 +24,19 @@
       (doseq [[choice descr] choices]
         (println (str (name choice) ": " descr)))
 
-      (let [in (str/trim (read-line))]
-        (cond (= in "") 
+      (let [in (-> (read-line) str/trim str/lower-case)]
+        (cond (= in "")
               (do (println "Please select an option!\n")
                   (recur))
 
-              (contains? valid-options (subs in 0 1)) 
-              (keyword in)
-              
+              (contains? valid-options (util/first-letter in))
+              (keyword (util/first-letter in))
+
               :else
-              (do (println "\nInvalid option - please try again!\n")
+              (do (println "\nInvalid option - please try again!\n") (println "This is a test of line length")
                   (recur))
               )))))
 
-;; FUNCTIONS TO HANDLE MAIN MENU CHOICES
 (defn print-status
   "Print the current Wordle Helper status."
   ([guesses remaining-words show-num-words?]
@@ -53,13 +51,6 @@
    (print-status guesses remaining-words false))
 )
 
-(defn print-sorted-words
-  "Print the provided words in sorted order, one per line."
-  [words]
-  (doseq [word (sort words)] 
-    (println word))
-  (println))
-
 (defn -main
   "Release the Wordle Helper!"
   []
@@ -67,18 +58,18 @@
 
   (loop [gfs []
          remaining-words wordlist/master-word-list]
-    
-    (when (= (count gfs) wordle-num-guesses)
+
+    (when (= (count gfs) (gaf/wordle :num-guesses))
       (println "Game over!"))
-    
+
     (when (< (count remaining-words) 5)
-      (print-sorted-words remaining-words))
+      (util/print-sorted remaining-words))
 
     (let [choice (get-user-choice main-choices)]
       (case choice
         :s (do (print-status gfs remaining-words true)
                (recur gfs remaining-words))
-        
+
         :g (let [gf (gaf/get-user-guess-and-feedback)
                  new-remaining-words (wordlist/filter-using-gf remaining-words gf)]
              (if (empty? new-remaining-words)
@@ -90,27 +81,27 @@
                  (println "Registered" (gaf/format-gf gf))
                  (print-status updated-gfs new-remaining-words true)
                  (recur updated-gfs new-remaining-words))))
-        
-        :w (do (print-sorted-words remaining-words)
+
+        :w (do (util/print-sorted remaining-words)
                (recur gfs remaining-words))
-        
+
         :l (let [letter-freqs (wordlist/most-common-letters remaining-words 10)]
              (doseq [[letter count] letter-freqs]
                (println (str letter ": " count)))
              (println)
              (recur gfs remaining-words))
-        
+
         :b (let [best-guesses (wordlist/most-informative-guesses remaining-words 5)]
              (doseq [[word score] best-guesses]
                (println (str word ": " (format "%.1f" (* (float score) 100)))))
              (println)
              (recur gfs remaining-words))
-        
+
         :u (let [all-but-last-gf (pop gfs)
                  new-remaining-words (wordlist/filter-using-gfs all-but-last-gf)]
              (recur all-but-last-gf new-remaining-words))
-        
-        :q (do (println "Thanks for playing!") 
+
+        :q (do (println "Thanks for playing!")
                (System/exit 0))
 
         (do (println "Choice" choice "not recognized! Please try again.\n")

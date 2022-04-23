@@ -1,8 +1,8 @@
 (ns wordle-helper.wordlist
   "Working with sets of possible words."
   (:require [clojure.string :as str]
-            [clojure.java.io :as io]
-            [wordle-helper.guess-and-feedback :as gaf]))
+            [wordle-helper.helpers :as util]
+            [clojure.java.io :as io]))
 
 (defn create-word-list
   "Create a set of all valid words from resources/popular5.txt."
@@ -15,10 +15,34 @@
 
 (def master-word-list (create-word-list))
 
+
+;; Using guess feedback to eliminate possible words
+(defn word-works?
+  "Is `word` consistent with the guess and feedback?"
+
+  [word {:keys [guess feedback]}]
+  (loop [idx 0]
+    (if (= idx (count word))
+      true
+      (let [word-letter (util/nth-letter word idx)
+            guess-letter (util/nth-letter guess idx)
+            feedback-digit (util/nth-letter feedback idx)]
+        (cond
+          (and (= feedback-digit "3") (not (= word-letter guess-letter))) false
+          (and (= feedback-digit "1") (str/includes? word guess-letter)) false
+          (and (= feedback-digit "2") (or (= word-letter guess-letter)
+                                          (not (str/includes? word guess-letter)))) false
+          :else (recur (inc idx)))))))
+
+(comment
+  (word-works? "CLING" {:guess "SOARE" :feedback "11213"})
+  (word-works? "HORSE" {:guess "SOARE" :feedback "23123"})
+  )
+
 (defn filter-using-gf
   "Find the subset of words that are consistent with guess-with-feedback gf."
   [words gf]
-  (filter #(gaf/word-works? % gf) words))
+  (filter #(word-works? % gf) words))
 
 (defn filter-using-gfs
   "Find the subset of words that are consistent with the gfs.
@@ -38,7 +62,7 @@
        (take n)))
 
 ;; ("A" "B" ... "Z")
-(def cap-letters 
+(def cap-letters
   (let [[A Z] (map int "AZ")
         ascii-codes (range A (inc Z))]
     (map #(str (char %)) ascii-codes)))
@@ -93,4 +117,3 @@
        master-list-scores
        (sort-by val >)
        (take n)))
-  
