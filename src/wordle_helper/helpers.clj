@@ -21,11 +21,10 @@
   (flush)
   (read-line))
 
-
 (defn nth-letter
   "Get the 0-indexed nth letter of a String as a String, not a character."
   [s n]
-  (assert (< n (count s)))
+  {:pre [(< n (count s))]}
   (subs s n (inc n)))
 
 (defn first-letter
@@ -34,7 +33,8 @@
   (nth-letter s 0))
 
 (defn print-sorted
-  "Print the provided strings in sorted order, one per line, with a newline at the end."
+  "Print the provided strings in sorted order, one per line, with a newline at
+   the end."
   [strings]
   (doseq [s (sort strings)] 
     (println s))

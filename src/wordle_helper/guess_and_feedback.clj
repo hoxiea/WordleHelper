@@ -2,14 +2,15 @@
   "Functionality related to valid guesses and feedback from the user."
   (:require
    [wordle-helper.helpers :as util]
-   [clojure.term.colors :as color]))
+   [clojure.term.colors :as color]
+   [clojure.string :as str]))
 
-(declare get-valid-guess-from-user get-valid-feedback-from-user)
+(declare get-valid-guess-from-user
+         get-valid-feedback-from-user)
 
 ;; CONSTANTS
-(def wordle 
-  {:word-length 5
-   :num-guesses 6})
+(def wordle {:word-length 5
+             :num-guesses 6})
 
 ;; THE MAIN ATTRACTION
 (defn get-user-guess-and-feedback
@@ -33,22 +34,22 @@
 (defn hot  [text] ((get color-fns "3") text))
 
 ;; HELPER FUNCTIONS: FORMATTING GUESS+FEEDBACK
-(defn apply-color 
+(defn apply-color
   [s feedback-str]
   ((get color-fns feedback-str) s))
 
-(defn format-gf 
+(defn format-gf
   "Format a guess (using feedback) for printing to terminal."
   [{:keys [guess feedback]}]
-  (loop [g guess 
-         f feedback 
+  (loop [g guess
+         f feedback
          current ""]
     (if (= g "")
       current
-      (recur (subs g 1) 
-             (subs f 1) 
-             (str current (apply-color (util/first-letter g) (util/first-letter f)))))))
-
+      (recur (subs g 1)
+             (subs f 1)
+             (str current (apply-color (util/first-letter g)
+                                       (util/first-letter f)))))))
 
 ;; HELPER FUNCTIONS: UTILITIES
 (defn clean-user-guess
@@ -81,9 +82,9 @@
     (if (is-guess-valid? clean-guess)
       clean-guess
       (do
-        (println "Make sure your guess contains exactly" (get wordle :word-length) "letters!")
-        (get-valid-guess-from-user)))
-  ))
+        (println "Make sure your guess contains exactly"
+                 (get wordle :word-length) "letters!")
+        (get-valid-guess-from-user)))))
 
 (defn get-valid-feedback-from-user
   "Get valid guess feedback from the user."
@@ -94,6 +95,27 @@
     (if (is-feedback-valid? clean-feedback)
       clean-feedback
       (do
-        (println "Make sure your feedback contains exactly" (get wordle :word-length) "numbers 1-3!")
-        (get-valid-feedback-from-user guess)))
-  ))
+        (println "Make sure your feedback contains exactly"
+                 (get wordle :word-length) "numbers 1-3!")
+        (get-valid-feedback-from-user guess)))))
+
+(defn gf-confirmed?
+  "Check with the player to make sure the g&f they entered is correct.
+   Called when the g&f results in 0 words remainings. If they confirm that their
+   g&f was entered correctly, then upgrade to the big word list. If there was a
+   typo, then just ignore the g&f."
+  [gf]
+  (println (str "There are 0 words consistent with " (format-gf gf) "!"))
+  (let [prompt "Are you sure you entered your guess & feedback correctly? (Y/n)"
+        raw-input (util/get-raw-input prompt)]
+    (cond
+      (or (empty? raw-input)
+          (= "y" (str/lower-case (util/first-letter raw-input))))
+      true
+
+      (= "n" (str/lower-case (util/first-letter raw-input)))
+      false
+
+      :else
+      (do (println "Input not recognized.")
+          (gf-confirmed? gf)))))
