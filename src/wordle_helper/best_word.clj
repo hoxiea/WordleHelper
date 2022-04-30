@@ -1,8 +1,7 @@
 (ns wordle-helper.best-word
   "Finding the best guess for you!"
   (:require
-   [clojure.string :as str]
-   ))
+   [clojure.string :as str]))
 
 ;;; wordle-helper.best-word
 ;;; Finding the most informative guess from a set of possible words, based on
@@ -54,8 +53,8 @@
 ;;; letter frequences in remaining-words. (A word's score is just the sum of its
 ;;; unique letters' info-scores.)
 (defn guess-scores
-  "Compute the info score for each guess in valid-guesses to narrow down
-   remaining-words."
+  "Map each guess in `valid-guesses` to its word score, based on the letters in
+  remaining-words."
   [valid-guesses remaining-words]
   (let [lscores (letter-scores remaining-words)]
     (letfn [(sum [xs] (reduce + xs))

@@ -43,17 +43,17 @@
 
 ;; Put it all together to get valid guess and valid feedback...
 (defn get-valid-guess-from-user
-  "Get a valid guess from the user."
-  []
-  (let [guess-prompt "What did you guess?"
-        raw-guess (util/get-raw-input guess-prompt)
-        clean-guess (clean-user-guess raw-guess)]
-    (if (is-guess-valid? clean-guess)
-      clean-guess
-      (do
-        (println "Make sure your guess contains exactly"
-                 (get params :word-length) "letters!")
-        (get-valid-guess-from-user)))))
+  "Get a guess from the user that passes is-guess-valid?"
+  ([guess-prompt]
+   (let [raw-guess (util/get-raw-input guess-prompt)
+         clean-guess (clean-user-guess raw-guess)]
+     (if (is-guess-valid? clean-guess)
+       clean-guess
+       (do
+         (println "Make sure your guess contains exactly"
+                  (get params :word-length) "letters!")
+         (get-valid-guess-from-user)))))
+  ([] (get-valid-guess-from-user "What did you guess?")))
 
 (defn get-valid-feedback-from-user
   "Get valid guess feedback from the user."

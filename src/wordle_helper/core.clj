@@ -17,6 +17,7 @@
    :a "List all possible words"
    :l "Most common letters in remaining words"
    :b "Best words to guess"
+   :w "Score a word you're considering guessing"
    :u "Undo your most recent guess"
    :q "Quit Wordle Helper"})
 
@@ -46,24 +47,10 @@
           (do (println "\nInvalid option - please try again!\n")
               (recur)))))))
 
-
-(defn print-status
-  "Print the current Wordle Helper status."
-  ([guesses remaining-words show-num-words?]
-   (if (empty? guesses)
-     (println "No guesses yet!")
-     (doseq [guess-string (map wpr/format-gf guesses)]
-       (println guess-string)))
-   (when show-num-words?
-     (println (count remaining-words) "possible words remain!\n")))
-  ([guesses remaining-words] (print-status guesses remaining-words false)))
-
-
 (defn -main
   "Release the Wordle Helper!"
   []
   (println "Let's play Wordle!")
-
   (loop [gfs []
          remaining-words wordlist/popular-word-list]
 
@@ -74,7 +61,7 @@
 
     (let [choice (get-user-choice main-choices)]
       (case choice
-        :s (do (print-status gfs remaining-words true)
+        :s (do (wpr/print-game-status gfs remaining-words true)
                (recur gfs remaining-words))
 
         :a (do (util/print-sorted remaining-words)
@@ -86,13 +73,22 @@
              (println)
              (recur gfs remaining-words))
 
+        ;; TODO: cache letter scores for current remaining-words, then use for functions?
+        ;;       could make a word-score function, for example
+        :w (let [word (gaf/get-valid-guess-from-user
+                       "What word would you like to score?")
+                 word->score (best/guess-scores [word] remaining-words)
+                 score (first (vals word->score))]
+             (println (wpr/format-word-and-score word score) "\n")
+             (recur gfs remaining-words))
+
         :b (let [valid-guesses (if (options :hard-mode?)
                                  remaining-words
                                  wordlist/popular-word-list)
                  scores (best/guess-scores valid-guesses remaining-words)
                  best-guesses (best/n-largest-vals scores 5)]
              (doseq [[word score] best-guesses]
-               (println (str word ": " (format "%.1f" (* (float score) 100)))))
+               (println (wpr/format-word-and-score word score)))
              (println)
              (recur gfs remaining-words))
 
@@ -105,7 +101,7 @@
                  (recur gfs remaining-words))
                (let [updated-gfs (conj gfs gf)]
                  (println "Registered" (wpr/format-gf gf))
-                 (print-status updated-gfs new-remaining-words true)
+                 (wpr/print-game-status updated-gfs new-remaining-words true)
                  (recur updated-gfs new-remaining-words))))
 
         :u (let [all-but-last-gf (pop gfs)

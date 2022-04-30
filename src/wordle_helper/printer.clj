@@ -1,8 +1,8 @@
 (ns wordle-helper.printer
   "Functions related to printing text to the terminal."
   (:require
-    [clojure.term.colors :as color]
-    [wordle-helper.helpers :as util]))
+   [clojure.term.colors :as color]
+   [wordle-helper.utils :as util]))
 
 (def text-color color/white)
 
@@ -35,3 +35,19 @@
              (subs f 1)
              (str current (apply-color (util/first-letter g)
                                        (util/first-letter f)))))))
+
+(defn print-game-status
+  "Print the current Wordle Helper status."
+  ([guesses remaining-words show-num-words?]
+   (if (some? guesses)
+     (doseq [guess-string (map format-gf guesses)]
+       (println guess-string))
+     (println "No guesses yet!"))
+   (when show-num-words?
+     (println (count remaining-words) "possible words remain!\n")))
+  ([guesses remaining-words] (print-game-status guesses remaining-words false)))
+
+(defn format-word-and-score
+  "Make a nicely-formatted string out of a word and its information score."
+  [word score]
+  (str word ": " (format "%.1f" (* (float score) 100))))
