@@ -2,62 +2,31 @@
   "Functionality related to valid guesses and feedback from the user."
   (:require
    [wordle-helper.helpers :as util]
-   [clojure.term.colors :as color]
+   [wordle-helper.printer :as wpr]
+   [wordle-helper.config :refer [params]]
    [clojure.string :as str]))
 
-(declare get-valid-guess-from-user
-         get-valid-feedback-from-user)
+;; When you enter a guess into Wordle, you receive feedback about each letter of
+;; your guess. This feedback is incredibly helpful in reducing the space of
+;; possible words down to the correct answer.
+;;
+;; In order to help you solve the Wordle, the Wordle Helper needs to collect a
+;; valid word and some valid feedback from the user.
 
-;; CONSTANTS
-(def wordle {:word-length 5
-             :num-guesses 6})
-
-;; THE MAIN ATTRACTION
-(defn get-user-guess-and-feedback
-  "Collect a valid guess + feedback (often called a gf) from the user."
-  []
-  (let [valid-guess (get-valid-guess-from-user)
-        valid-feedback (get-valid-feedback-from-user valid-guess)]
-    {:guess valid-guess, :feedback valid-feedback}))
-
-;; FEEDBACK INFORMATION
-;; "1" - letter doesn't appear in word
-;; "2" - letter appears in word, but not in guessed position
-;; "3" - letter appears in word, in guessed position
-(def text-color color/white)
-(def color-fns
-  {"1" #(text-color %)
-   "2" #(color/on-yellow (text-color %))
-   "3" #(color/on-green  (text-color %))})
-(defn cold [text] ((get color-fns "1") text))
-(defn warm [text] ((get color-fns "2") text))
-(defn hot  [text] ((get color-fns "3") text))
-
-;; HELPER FUNCTIONS: FORMATTING GUESS+FEEDBACK
-(defn apply-color
-  [s feedback-str]
-  ((get color-fns feedback-str) s))
-
-(defn format-gf
-  "Format a guess (using feedback) for printing to terminal."
-  [{:keys [guess feedback]}]
-  (loop [g guess
-         f feedback
-         current ""]
-    (if (= g "")
-      current
-      (recur (subs g 1)
-             (subs f 1)
-             (str current (apply-color (util/first-letter g)
-                                       (util/first-letter f)))))))
-
-;; HELPER FUNCTIONS: UTILITIES
+;; Users might choose to enter their guess lowercase, uppercase, with spaces,
+;; etc. We can clean up their input by extracting all letters and converting
+;; them to uppercase.
 (defn clean-user-guess
   "Clean a user-entered guess."
   [raw-guess]
   (let [guess-regex #"[a-zA-z]+"]
     (util/extract-join-upper raw-guess guess-regex)))
 
+;; Users enter their feedback as a length-5 sequence from {1, 2, 3}, where:
+;; 1: cold (miss)
+;; 2: warm (partial hit)
+;; 3: hot (correct)
+;; Again, we'll extract the numbers from their input to get the feedback.
 (defn clean-user-feedback
   "Clean a user-entered guess feedback."
   [raw-feedback]
@@ -67,12 +36,12 @@
 (defn is-input-valid?
   "Did the user enter a guess OR feedback that's valid after cleaning?"
   [cleaned-input]
-  (= (count cleaned-input) (get wordle :word-length)))
+  (= (count cleaned-input) (get params :word-length)))
 
 (def is-guess-valid? is-input-valid?)
 (def is-feedback-valid? is-input-valid?)
 
-;; HELPER FUNCTIONS: INPUT FROM USER
+;; Put it all together to get valid guess and valid feedback...
 (defn get-valid-guess-from-user
   "Get a valid guess from the user."
   []
@@ -83,7 +52,7 @@
       clean-guess
       (do
         (println "Make sure your guess contains exactly"
-                 (get wordle :word-length) "letters!")
+                 (get params :word-length) "letters!")
         (get-valid-guess-from-user)))))
 
 (defn get-valid-feedback-from-user
@@ -96,16 +65,25 @@
       clean-feedback
       (do
         (println "Make sure your feedback contains exactly"
-                 (get wordle :word-length) "numbers 1-3!")
+                 (get params :word-length) "numbers 1-3!")
         (get-valid-feedback-from-user guess)))))
 
+(defn get-user-guess-and-feedback
+  "Collect a valid guess + feedback (often called a gf) from the user."
+  []
+  (let [valid-guess (get-valid-guess-from-user)
+        valid-feedback (get-valid-feedback-from-user valid-guess)]
+    {:guess valid-guess, :feedback valid-feedback}))
+
+
+;; TODO: finish this implementation
 (defn gf-confirmed?
   "Check with the player to make sure the g&f they entered is correct.
    Called when the g&f results in 0 words remainings. If they confirm that their
    g&f was entered correctly, then upgrade to the big word list. If there was a
    typo, then just ignore the g&f."
   [gf]
-  (println (str "There are 0 words consistent with " (format-gf gf) "!"))
+  (println (str "There are 0 words consistent with " (wpr/format-gf gf) "!"))
   (let [prompt "Are you sure you entered your guess & feedback correctly? (Y/n)"
         raw-input (util/get-raw-input prompt)]
     (cond

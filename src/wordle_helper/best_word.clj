@@ -2,8 +2,7 @@
   "Finding the best guess for you!"
   (:require
    [clojure.string :as str]
-   [wordle-helper.config :as config :refer [options]]
-   [wordle-helper.wordlist :as wordlist :refer [popular-word-list]]))
+   ))
 
 ;;; wordle-helper.best-word
 ;;; Finding the most informative guess from a set of possible words, based on

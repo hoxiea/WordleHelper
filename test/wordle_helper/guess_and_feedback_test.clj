@@ -1,6 +1,7 @@
 (ns wordle-helper.guess-and-feedback-test
   (:require [clojure.test :refer [deftest testing is]]
-            [wordle-helper.guess-and-feedback :as gaf]))
+            [wordle-helper.guess-and-feedback :as gaf]
+            [wordle-helper.printer :as wpr]))
 
 (deftest bad-guesses-are-not-invalid
   (testing "Bad raw guesses aren't valid"
@@ -17,5 +18,5 @@
 (deftest text-coloring-works
   (testing "Guesses are colored correctly according to feedback received"
       (let [gf {:guess "ABC" :feedback "123"}
-            expected (str (gaf/cold "A") (gaf/warm "B") (gaf/hot "C"))]
-        (is (= expected (gaf/format-gf gf))))))
+            expected (str (wpr/cold "A") (wpr/warm "B") (wpr/hot "C"))]
+        (is (= expected (wpr/format-gf gf))))))

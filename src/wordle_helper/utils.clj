@@ -1,4 +1,4 @@
-(ns wordle-helper.helpers
+(ns wordle-helper.utils
   (:require [clojure.string :as str]))
 
 

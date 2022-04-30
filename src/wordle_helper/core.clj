@@ -6,6 +6,7 @@
    [wordle-helper.config :as config :refer [options]]
    [wordle-helper.guess-and-feedback :as gaf]
    [wordle-helper.helpers :as util]
+   [wordle-helper.printer :as wpr]
    [wordle-helper.best-word :as best]
    [wordle-helper.wordlist :as wordlist]))
 
@@ -51,7 +52,7 @@
   ([guesses remaining-words show-num-words?]
    (if (empty? guesses)
      (println "No guesses yet!")
-     (doseq [guess-string (map gaf/format-gf guesses)]
+     (doseq [guess-string (map wpr/format-gf guesses)]
        (println guess-string)))
    (when show-num-words?
      (println (count remaining-words) "possible words remain!\n")))
@@ -66,7 +67,7 @@
   (loop [gfs []
          remaining-words wordlist/popular-word-list]
 
-    (when (= (count gfs) (gaf/wordle :num-guesses))
+    (when (= (count gfs) (options :num-guesses))
       (println "Game over!"))
     (when (< (count remaining-words) 5)
       (util/print-sorted remaining-words))
@@ -103,12 +104,13 @@
                                                        wordlist/huge-word-list))
                  (recur gfs remaining-words))
                (let [updated-gfs (conj gfs gf)]
-                 (println "Registered" (gaf/format-gf gf))
+                 (println "Registered" (wpr/format-gf gf))
                  (print-status updated-gfs new-remaining-words true)
                  (recur updated-gfs new-remaining-words))))
 
         :u (let [all-but-last-gf (pop gfs)
-                 new-remaining-words (wordlist/filter-using-gfs all-but-last-gf)]
+                 new-remaining-words (wordlist/filter-using-gfs all-but-last-gf
+                                                                wordlist/popular-word-list)]
              (recur all-but-last-gf new-remaining-words))
 
         :q (do (println "Thanks for playing!")
