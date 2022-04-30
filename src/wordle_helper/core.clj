@@ -5,7 +5,7 @@
    [clojure.string :as str]
    [wordle-helper.config :as config :refer [options]]
    [wordle-helper.guess-and-feedback :as gaf]
-   [wordle-helper.helpers :as util]
+   [wordle-helper.utils :as util]
    [wordle-helper.printer :as wpr]
    [wordle-helper.best-word :as best]
    [wordle-helper.wordlist :as wordlist]))

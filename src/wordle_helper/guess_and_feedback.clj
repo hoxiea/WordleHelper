@@ -1,7 +1,7 @@
 (ns wordle-helper.guess-and-feedback
   "Functionality related to valid guesses and feedback from the user."
   (:require
-   [wordle-helper.helpers :as util]
+   [wordle-helper.utils :as util]
    [wordle-helper.printer :as wpr]
    [wordle-helper.config :refer [params]]
    [clojure.string :as str]))
