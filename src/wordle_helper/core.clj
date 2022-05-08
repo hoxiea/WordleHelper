@@ -23,7 +23,6 @@
 
 
 ;; TODO: let the user specify a count for :l, :b
-;; TODO: add :w for a single word score breakdown
 
 (defn get-user-choice
   "Get a valid choice from the map of choices via *in*."
@@ -93,11 +92,11 @@
              (recur gfs remaining-words))
 
         :g (let [gf (gaf/get-user-guess-and-feedback)
-                 new-remaining-words (wordlist/filter-using-gf gf remaining-words)]
+                 new-remaining-words (wordlist/filter-using-gf remaining-words gf)]
              (if (empty? new-remaining-words)
                (if (gaf/gf-confirmed? gf)
-                 (recur gfs (wordlist/filter-using-gfs (conj gfs gf)
-                                                       wordlist/huge-word-list))
+                 (recur gfs (wordlist/filter-using-gfs wordlist/huge-word-list
+                                                       (conj gfs gf)))
                  (recur gfs remaining-words))
                (let [updated-gfs (conj gfs gf)]
                  (println "Registered" (wpr/format-gf gf))
