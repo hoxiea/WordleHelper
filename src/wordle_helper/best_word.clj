@@ -62,8 +62,3 @@
             (word-score [word] (sum (map lscores (unique-letters word))))]
       (into {} (for [word valid-guesses]
                  [word (word-score word)])))))
-
-(defn n-largest-vals
-  "Get the `n` largest key-value pairs from map `m`."
-  [m n]
-  (->> m (sort-by val >) (take n)))
