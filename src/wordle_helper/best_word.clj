@@ -12,7 +12,7 @@
 ;;; possible words is totally uninformative. This is nicely captured via the
 ;;; following info-score:
 (defn info-score
-  "Compute an information score := p*(1-p), where p = count/total."
+  "Compute an info-score := p*(1-p), where p = count/total."
   [count total]
   {:pre [(pos-int? total)
          (>= count 0)
@@ -20,11 +20,11 @@
   (let [p (/ count total)]
     (* p (- 1 p))))
 
-;;; Next, for a given set of words, compute an info-score for all 26 letters.
+;; Next, for a given set of words, compute an info-score for all 26 letters.
 (def cap-letters
   (let [[A Z] (map int "AZ")
         ascii-codes (range A (inc Z))]
-    (map #(str (char %)) ascii-codes)))
+    (map (comp str char) ascii-codes)))
 ; ("A" "B" ... "Z")
 
 (defn letter-counts
