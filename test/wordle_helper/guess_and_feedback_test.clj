@@ -1,22 +1,29 @@
 (ns wordle-helper.guess-and-feedback-test
   (:require [clojure.test :refer [deftest testing is]]
-            [wordle-helper.guess-and-feedback :as gaf]
-            [wordle-helper.printer :as wpr]))
+            [wordle-helper.guess-and-feedback :as sut]))
 
-(deftest bad-guesses-are-not-invalid
-  (testing "Bad raw guesses aren't valid"
-      (let [bad-raw-guesses ["" "abc" "too many characters"]
-            bad (map gaf/clean-user-guess bad-raw-guesses)]
-        (is (every? false? (map gaf/is-guess-valid? bad))) true)))
+(deftest process-guess-test
+  (testing "five capital letters are recognized"
+    (is (= (sut/process-guess "SOARE") "SOARE")))
+  (testing "lowercase letters are fine too"
+    (is (= (sut/process-guess "soare") "SOARE")))
+  (testing "the first consecutive 5 letters are taken"
+    (is (= (sut/process-guess "my fav opener is soare") "OPENE")))
+  (testing "if no 5+ letter words are given, return nil"
+    (is (= (sut/process-guess "only tiny wrds here") nil))))
 
-(deftest good-guesses-are-valid
-  (testing "Good raw guesses are valid"
-      (let [good-raw-guesses ["soare" "hoxie" "a b c d e"]
-            good (map gaf/clean-user-guess good-raw-guesses)]
-        (is (every? true? (map gaf/is-guess-valid? good))) true)))
+(deftest process-feedback-test
+  (testing "five numbers between 1 and 3 are recognized"
+    (is (= (sut/process-feedback "11223") "11223")))
+  (testing "grab the first five if more than five numbers in {1, 2, 3} given"
+    (is (= (sut/process-feedback "11223311") "11223")))
+  (testing "nil if <5 numbers in {1, 2, 3} given"
+    (is (= (sut/process-feedback "123") nil)))
+  (testing "nil if 5 *consecutive* numbers in {1, 2, 3} aren't given"
+    (is (= (sut/process-feedback "123 soare 321") nil))
+    (is (= (sut/process-feedback "1234321") nil))))
 
-(deftest text-coloring-works
-  (testing "Guesses are colored correctly according to feedback received"
-      (let [gf {:guess "ABC" :feedback "123"}
-            expected (str (wpr/cold "A") (wpr/warm "B") (wpr/hot "C"))]
-        (is (= expected (wpr/format-gf gf))))))
+(deftest to-gf-test
+  (testing "guess & feedback get zipped, with feedback changed to temperatures"
+    (let [exp '(["S" :cold] ["O" :warm] ["A" :hot] ["R" :warm] ["E" :cold])]
+      (is (= (sut/to-gf "SOARE" "12321") exp)))))

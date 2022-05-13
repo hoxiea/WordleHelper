@@ -13,8 +13,7 @@
            str/upper-case
            str/split-lines)))
 
-(def popular-word-list (read-word-list "popular5.txt"))
-(def huge-word-list (read-word-list "all5.txt"))
+(def word-list (read-word-list "wordle-word-list.txt"))
 
 ;; For each letter in your guess, Wordle will tell you one of three things:
 ;; - Hot: the letter you guessed appears in the answer in exactly the position
@@ -42,29 +41,26 @@
 ;; But instead of "removing" letters, we'll just replace them with a "_" so that
 ;; indices are preserved.
 
-(def feedback-kws
-  {"1" :cold
-   "2" :warm
-   "3" :hot})
 
 (defn gf->tempmap
   "Convert a gf into a map from each :temp to info about those letters."
-  [{:keys [guess feedback]}]
-  (let [letters (str/split guess #"")
-        temps (map feedback-kws (str/split feedback #""))
-        triplets (map #(hash-map :index %1 :guess-letter %2 :temp %3)
+  [gf]
+  (let [letters (map first gf)
+        temps (map second gf)
+        triplets (map #(hash-map :index %1, :guess-letter %2, :temp %3)
                       (range) letters temps)]
     (group-by :temp triplets)))
 
 (comment
-  (gf->tempmap {:guess "SOARE" :feedback "12113"})
+  (gf->tempmap '(["S" :cold] ["O" :warm] ["A" :cold] ["R" :warm] ["E" :hot]))
 ;; => {:cold [{:temp :cold, :index 0, :guess-letter "S"}
-;;            {:temp :cold, :index 2, :guess-letter "A"}
-;;            {:temp :cold, :index 3, :guess-letter "R"}],
-;;     :warm [{:temp :warm, :index 1, :guess-letter "O"}],
+;;            {:temp :cold, :index 2, :guess-letter "A"}],
+;;     :warm [{:temp :warm, :index 1, :guess-letter "O"}
+;;            {:temp :warm, :index 3, :guess-letter "R"}],
 ;;     :hot [{:temp :hot, :index 4, :guess-letter "E"}]}
   )
 
+;; TODO: can we use spec to make sure incoming data has the correct form?
 ;; We can use the tempmap for a guess & feedback to easily figure out if a
 ;; certain word is compatible or not.
 (defn hot-reducer
@@ -151,7 +147,7 @@
   (set (filter #(word-works? % gf) words)))
 
 (comment
-  (filter-using-gf popular-word-list {:guess "SOARE" :feedback "12131"})
+  (filter-using-gf word-list {:guess "SOARE" :feedback "12131"})
 ;; => #{"GLORY" "MICRO" "IVORY" "THORN" "BURRO" "CHORD" "INTRO"}
   )
 
@@ -163,7 +159,7 @@
 (comment
   (let [gfs [{:guess "SOARE" :feedback "12131"},
              {:guess "GZZZZ" :feedback "31111"}]
-        remaining-words (filter-using-gfs popular-word-list gfs)]
+        remaining-words (filter-using-gfs word-list gfs)]
     remaining-words)
 ;; => #{"GLORY"}
   )
