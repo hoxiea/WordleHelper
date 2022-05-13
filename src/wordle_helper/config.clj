@@ -1,20 +1,24 @@
 (ns wordle-helper.config
-  "Constants related to the game of Wordle, and settings for Wordle Helper."
-  (:require
-    [clojure.term.colors :as color]))
+  "Constants related to the game of Wordle, and settings for Wordle Helper.")
 
-(def options {:hard-mode? false})
-
-(def colors {:text-color color/white
-             :cold-bg color/on-grey
-             :warm-bg color/on-yellow
-             :hot-bg color/on-green})
-
-(defn color-text [text] ((:text-color colors) text))
-
-(defn cold [text] ((:cold-bg colors) (color-text text)))
-(defn warm [text] ((:warm-bg colors) (color-text text)))
-(defn hot [text] ((:hot-bg colors) (color-text text)))
-
+;; Constants related to Wordle
 (def params {:word-length 5
              :num-guesses 6})
+
+;; These options will be set:
+;; - here and via user input, for the CLI version
+;; - in-game, for the browser extension version
+(def game-options (atom {:hard-mode? true
+                         :high-contrast-mode? false
+                         :dark-mode? true}))
+
+(defn toggle-high-contrast-mode!
+  "Invert the current boolean value of (:high-contrast-mode? @game-options)."
+  []
+  (swap! game-options update-in [:high-contrast-mode?] not))
+
+;; These options are:
+;; - set permanently, for the CLI version
+;; - changeable via the extension settings, for the browser extension
+(def display-options {:num-top-letters 10
+                      :num-best-words 10})

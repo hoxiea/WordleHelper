@@ -1,18 +1,19 @@
 (ns wordle-helper.core
-  "Main entry point for Wordle Helper."
+  "Main entry point for Wordle Helper CLI."
   (:gen-class)
   (:require
-   [clojure.string :as str]
-   [wordle-helper.config :as config :refer [options]]
+   [wordle-helper.config :as config :refer [game-options display-options]]
    [wordle-helper.guess-and-feedback :as gaf]
    [wordle-helper.utils :as util]
    [wordle-helper.printer :as wpr]
    [wordle-helper.best-word :as best]
    [wordle-helper.wordlist :as wordlist]))
 
-
+;; TODO: use current value instead of initial value!
 (def main-choices
   {:s "Print current status"
+   :c (str "Toggle high-contrast mode (current: "
+           (:high-contrast-mode? @game-options) ")")
    :g "Enter your next guess"
    :a "List all possible words"
    :l "Most common letters in remaining words"
@@ -21,56 +22,34 @@
    :u "Undo your most recent guess"
    :q "Quit Wordle Helper"})
 
-
-;; TODO: let the user specify a count for :l, :b
-
-(defn get-user-choice
-  "Get a valid choice from the map of choices via *in*."
-  [choices]
-  (let [valid-options (set (map name (keys choices)))]
-    (loop []
-      (println "What would you like to do?")
-      (doseq [[choice descr] choices]
-        (println (str (name choice) ": " descr)))
-
-      (let [in (-> (read-line) str/trim str/lower-case)]
-        (cond
-          (= in "")
-          (do (println "Please select an option!\n")
-              (recur))
-
-          (contains? valid-options (util/first-letter in))
-          (keyword (util/first-letter in))
-
-          :else
-          (do (println "\nInvalid option - please try again!\n")
-              (recur)))))))
-
+;; TODO: fix undo; find a way to test undo
 (defn -main
   "Release the Wordle Helper!"
   []
   (println "Let's play Wordle!")
   (loop [gfs []
-         remaining-words wordlist/popular-word-list]
+         remaining-words wordlist/word-list]
 
-    (when (= (count gfs) (options :num-guesses))
+    (when (= (count gfs) (:num-guesses config/params))
       (println "Game over!"))
     (when (< (count remaining-words) 5)
       (util/print-sorted remaining-words))
 
-    (let [choice (get-user-choice main-choices)]
+    (let [choice (util/get-user-choice main-choices)]
       (case choice
         :s (do (wpr/print-game-status gfs remaining-words true)
+               (recur gfs remaining-words))
+
+        :c (do (config/toggle-high-contrast-mode!)
                (recur gfs remaining-words))
 
         :a (do (util/print-sorted remaining-words)
                (recur gfs remaining-words))
 
-        :l (let [letter-freqs (wordlist/most-common-letters remaining-words 10)]
-             (doseq [[letter count] letter-freqs]
-               (println (str letter ": " count)))
-             (println)
-             (recur gfs remaining-words))
+        :l (do (wpr/print-letter-freqs
+                (wordlist/most-common-letters remaining-words
+                                              (:num-top-letters display-options)))
+               (recur gfs remaining-words))
 
         ;; TODO: cache letter scores for current remaining-words, then use for functions?
         ;;       could make a word-score function, for example
@@ -81,11 +60,11 @@
              (println (wpr/format-word-and-score word score) "\n")
              (recur gfs remaining-words))
 
-        :b (let [valid-guesses (if (options :hard-mode?)
+        :b (let [valid-guesses (if (@game-options :hard-mode?)
                                  remaining-words
-                                 wordlist/popular-word-list)
+                                 wordlist/word-list)
                  scores (best/guess-scores valid-guesses remaining-words)
-                 best-guesses (best/n-largest-vals scores 5)]
+                 best-guesses (util/n-largest-vals scores (:num-best-words display-options))]
              (doseq [[word score] best-guesses]
                (println (wpr/format-word-and-score word score)))
              (println)
@@ -94,10 +73,12 @@
         :g (let [gf (gaf/get-user-guess-and-feedback)
                  new-remaining-words (wordlist/filter-using-gf remaining-words gf)]
              (if (empty? new-remaining-words)
-               (if (gaf/gf-confirmed? gf)
-                 (recur gfs (wordlist/filter-using-gfs wordlist/huge-word-list
-                                                       (conj gfs gf)))
+               (do
+                 (println (str "There are 0 words consistent with "
+                               (wpr/format-gf gf) "!\n"
+                               "Make sure you entered your info correctly."))
                  (recur gfs remaining-words))
+
                (let [updated-gfs (conj gfs gf)]
                  (println "Registered" (wpr/format-gf gf))
                  (wpr/print-game-status updated-gfs new-remaining-words true)
@@ -105,7 +86,7 @@
 
         :u (let [all-but-last-gf (pop gfs)
                  new-remaining-words (wordlist/filter-using-gfs all-but-last-gf
-                                                                wordlist/popular-word-list)]
+                                                                wordlist/word-list)]
              (recur all-but-last-gf new-remaining-words))
 
         :q (do (println "Thanks for playing!")
