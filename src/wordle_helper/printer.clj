@@ -1,40 +1,50 @@
 (ns wordle-helper.printer
-  "Functions related to printing text to the terminal."
+  "Functions related to printing text to the terminal for CLI version."
   (:require
    [clojure.term.colors :as color]
-   [wordle-helper.utils :as util]))
-
-(def text-color color/white)
+   [wordle-helper.config :as config :refer [game-options]]))
 
 ;; FEEDBACK INFORMATION
-;; "1" - letter doesn't appear in word
-;; "2" - letter appears in word, but not in guessed position
-;; "3" - letter appears in word, in guessed position
-(def color-fns
-  {"1" #(text-color %)
-   "2" #(color/on-yellow (text-color %))
-   "3" #(color/on-green  (text-color %))})
-(defn cold [text] ((get color-fns "1") text))
-(defn warm [text] ((get color-fns "2") text))
-(defn hot  [text] ((get color-fns "3") text))
+;; :cold - letter doesn't appear in word, given earlier feedback
+;; :warm - letter appears in word, but not in guessed position
+;; :hot  - letter appears in word in guessed position!
 
-;; HELPER FUNCTIONS: FORMATTING GUESS+FEEDBACK
-(defn apply-color
-  [s feedback-str]
-  ((get color-fns feedback-str) s))
+#_:clj-kondo/ignore
+(def text-color color/white)
 
-(defn format-gf
-  "Format a guess (using feedback) for printing to terminal."
-  [{:keys [guess feedback]}]
-  (loop [g guess
-         f feedback
-         current ""]
-    (if (= g "")
-      current
-      (recur (subs g 1)
-             (subs f 1)
-             (str current (apply-color (util/first-letter g)
-                                       (util/first-letter f)))))))
+#_:clj-kondo/ignore
+(defn bg-color
+  "Get the background color function for the text."
+  [temp]
+  (case temp
+    :cold color/on-grey
+    :warm (if (:high-contrast-mode? @game-options)
+            color/on-blue
+            color/on-yellow)
+    :hot (if (:high-contrast-mode? @game-options)
+           color/on-red
+           color/on-green)))
+
+(defn render-pair
+  "Render a letter + temp for printing, e.g. ['S', :hot]"
+  [[letter temp]]
+  ((bg-color temp) (text-color letter)))
+
+(comment
+  (render-pair ["S", :hot])  ;; => "[41m[37mS[0m[0m"
+  (render-pair ["O", :warm]) ;; => "[44m[37mO[0m[0m"
+  )
+
+(defn format-gf [gf]
+  (apply str (map render-pair gf)))
+
+(comment
+  ;; For each pair, you get character codes that set the background & text color
+  (format-gf '(["S" :cold] ["O" :warm] ["A" :cold]))
+  ;; => "[40m[37mS[0m[0m[44m[37mO[0m[0m[40m[37mA[0m[0m"
+  ;; letters:       ^                    ^                    ^
+  )
+
 
 (defn print-game-status
   "Print the current Wordle Helper status."
@@ -46,6 +56,13 @@
    (when show-num-words?
      (println (count remaining-words) "possible words remain!\n")))
   ([guesses remaining-words] (print-game-status guesses remaining-words false)))
+
+(defn print-letter-freqs
+  "Print nicely-formatted letter frequencies."
+  [letter-freqs]
+  (doseq [[letter count] letter-freqs]
+    (println (str letter ": " count)))
+  (println))
 
 (defn format-word-and-score
   "Make a nicely-formatted string out of a word and its information score."
