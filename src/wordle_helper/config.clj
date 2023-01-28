@@ -8,8 +8,8 @@
 ;; These options will be set:
 ;; - here and via user input, for the CLI version
 ;; - in-game, for the browser extension version
-(def game-options (atom {:hard-mode? true
-                         :high-contrast-mode? false
+(def game-options (atom {:hard-mode? false
+                         :high-contrast-mode? true
                          :dark-mode? true}))
 
 (defn toggle-high-contrast-mode!
