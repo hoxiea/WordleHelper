@@ -134,7 +134,7 @@ TICED: 58.3
 MICHT: 58.3
 ```
 
-I wouldn't have considered COMPT, but it's actually an incredible guess if our goal is to distinguish between the common words I listed above. Let's see what kind of feedback we get from Wordle:
+I wouldn't have considered COMPT, but if you look at the list of possibilities above, you'll see that many of the possibilities use the letters C/O/M/P/T. So feedback about these letters should help us confirm or eliminate possibilities. Let's see what kind of feedback we get from Wordle:
 
 ![](/README-imgs/compt.png)
 
