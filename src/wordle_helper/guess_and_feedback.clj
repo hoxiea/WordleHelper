@@ -71,7 +71,7 @@
 (defn get-valid-feedback-from-user
   "Get valid guess feedback from the user: a sequence of five {1,2,3}s."
   [guess]
-  (let [prompt (str "And what did Wordle tell you about " guess "?")
+  (let [prompt (str "And what did Wordle tell you about " guess "? (1: miss, 2: cold, 3: hot)")
         raw-feedback (util/get-raw-input prompt)
         clean-feedback (process-feedback raw-feedback)]
     (if clean-feedback
