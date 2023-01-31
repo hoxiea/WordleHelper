@@ -84,10 +84,13 @@
                  (wpr/print-game-status updated-gfs new-remaining-words true)
                  (recur updated-gfs new-remaining-words))))
 
-        :u (let [all-but-last-gf (pop gfs)
-                 new-remaining-words (wordlist/filter-using-gfs all-but-last-gf
-                                                                wordlist/word-list)]
-             (recur all-but-last-gf new-remaining-words))
+        :u (if (empty? gfs)
+             (recur gfs remaining-words) 
+
+            (let [all-but-last-gf (pop gfs)
+                    new-remaining-words (wordlist/filter-using-gfs wordlist/word-list 
+                                                                   all-but-last-gf)]
+             (recur all-but-last-gf new-remaining-words)))
 
         :q (do (println "Thanks for playing!")
                (System/exit 0))
